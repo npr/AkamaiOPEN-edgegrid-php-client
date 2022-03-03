@@ -14,6 +14,7 @@ namespace Akamai\Open\EdgeGrid;
 use Akamai\Open\EdgeGrid\Handler\Authentication as AuthenticationHandler;
 use Akamai\Open\EdgeGrid\Handler\Debug as DebugHandler;
 use Akamai\Open\EdgeGrid\Handler\Verbose as VerboseHandler;
+use GuzzleHttp\Promise\PromiseInterface;
 
 /**
  * Akamai {OPEN} EdgeGrid Client for PHP
@@ -123,7 +124,7 @@ class Client extends \GuzzleHttp\Client implements \Psr\Log\LoggerAwareInterface
      * @return \GuzzleHttp\Promise\PromiseInterface
      * @throws \GuzzleHttp\Exception\GuzzleException
      */
-    public function requestAsync($method, $uri = null, array $options = [])
+    public function requestAsync(string $method, $uri = '', array $options = []): PromiseInterface
     {
         $options = $this->setRequestOptions($options);
 
@@ -144,7 +145,7 @@ class Client extends \GuzzleHttp\Client implements \Psr\Log\LoggerAwareInterface
      *
      * @return \GuzzleHttp\Promise\PromiseInterface
      */
-    public function sendAsync(\Psr\Http\Message\RequestInterface $request, array $options = [])
+    public function sendAsync(\Psr\Http\Message\RequestInterface $request, array $options = []): PromiseInterface
     {
         $options = $this->setRequestOptions($options);
 
@@ -261,29 +262,25 @@ class Client extends \GuzzleHttp\Client implements \Psr\Log\LoggerAwareInterface
     /**
      * Set a PSR-3 compatible logger (or use monolog by default)
      *
-     * @param \Psr\Log\LoggerInterface $logger
-     * @param string $messageFormat Message format
+     * @param \Psr\Log\LoggerInterface|null $logger
      * @return $this
      */
     public function setLogger(
-        \Psr\Log\LoggerInterface $logger = null,
-        $messageFormat = \GuzzleHttp\MessageFormatter::CLF
-    ) {
+        \Psr\Log\LoggerInterface $logger = null
+    ): void {
         if ($logger === null) {
             $handler = new \Monolog\Handler\ErrorLogHandler(\Monolog\Handler\ErrorLogHandler::SAPI);
             $handler->setFormatter(new \Monolog\Formatter\LineFormatter('%message%'));
             $logger = new \Monolog\Logger('HTTP Log', [$handler]);
         }
 
-        $formatter = new \GuzzleHttp\MessageFormatter($messageFormat);
+        $formatter = new \GuzzleHttp\MessageFormatter();
 
         $handler = \GuzzleHttp\Middleware::log($logger, $formatter);
         $this->logger = $handler;
 
         $handlerStack = $this->getConfig('handler');
         $this->setLogHandler($handlerStack, $handler);
-
-        return $this;
     }
 
     /**
